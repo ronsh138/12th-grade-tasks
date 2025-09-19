@@ -20,7 +20,7 @@ def ping(ttl, host):
         if response.src == host:
             return ttl
     else:
-        print(f"{ttl}. .Warning: Host time out, TTL {ttl} Moving on .")
+        print(f"{ttl}. Warning: Host time out, TTL {ttl} Moving on .")
     return 0
 
 if "__main__" == __name__:
