@@ -15,6 +15,20 @@ def recv_json(client_socket):
     size = json.loads(size)
     size = int(size["size"])
 
+    type = client_socket.recv(buf_size)
+    client_socket.send(ack)
+    type = type.decode("utf-8")
+    type = json.loads(type)
+    type = type["type"]
+
+    if type == "file":
+        name = client_socket.recv(buf_size)
+        client_socket.send(ack)
+        name = name.decode("utf-8")
+        name = json.loads(name)
+        name = name["name"]
+
+
     data = ""
     t_data = ""
     recv_count = 0
@@ -24,29 +38,53 @@ def recv_json(client_socket):
             return None
         client_socket.send(ack)
         t_data = t_data.decode("utf-8")
-        data += t_data
-        recv_count += buf_size
+        t_data = json.loads(t_data)
+        data += t_data["data"]
+        recv_count += buf_size-13
 
-    return json.loads(data)
+    if type == "file":
+        data = {"type": type, "name": name, "data": data}
+    else:
+        data = {"type": type, "data": data}
+
+    return data
 
 
 def send_json(client_socket, data):
-    size = str(len(data))
+    
+    j_data = json.dumps(data["data"])
+    
+    size = str(len(j_data))
     size = {"size": size}
-    size = json.dumps(size).encode()
+    size = json.dumps(size).encode("utf-8")
     client_socket.send(size)
     ack_s = client_socket.recv(buf_size)
     if ack_s is None:
         return None
 
-    j_data = json.dumps(data)
-
-    data_to_send = [j_data[i:i + buf_size] for i in range(0, len(j_data), buf_size)]
+    type = {"type": data["type"]}
+    type = json.dumps(type).encode("utf-8")
+    client_socket.send(type)
+    ack_s = client_socket.recv(buf_size)
+    if ack_s is None:
+        return None
+    
+    if data["type"] == "file":
+        name = {"name": data["name"]}
+        name = json.dumps(name).encode("utf-8")
+        client_socket.send(name)
+        ack_s = client_socket.recv(buf_size)
+        if ack_s is None:
+            return None
+        
+    data_to_send = list(j_data[i:i + buf_size-13] for i in range(0, len(j_data), buf_size-13))
 
     for i in data_to_send:
-        chunk = i.encode("utf-8")
+        chunk = i
+        chunk = {"data": chunk}
+        chunk = json.dumps(chunk).encode("utf-8")
         client_socket.send(chunk)
-        ack_s = client_socket.recv(buf_size)
+        ack_s = client_socket.recv(buf_size-13)
         if ack_s is None:
             return None
 
@@ -54,7 +92,8 @@ def send_json(client_socket, data):
 
 def analize_json(data, client_socket):
     if data["type"] == "text":
-        print(f"from client {client_socket}: {data["data"]}")
+        text = data["data"]
+        print(f"from client: {text}")
 
     elif data["type"] == "file":
         if not os.path.exists("uploads"):

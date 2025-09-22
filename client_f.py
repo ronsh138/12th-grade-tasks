@@ -11,18 +11,17 @@ ADDR = (host, port)
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-
+current_dic = os.getcwd()
 
 
 
 if "__main__" == __name__:
     client_socket.connect(ADDR)
     while 1:
-        data = input("write somthing")
-        print(os.path.dirname(os.path.abspath(__file__)))
-        if os.path.exists(os.path.dirname(os.path.abspath(__file__)) + "\\" + data):
+        data = input("write somthing: ")
+        if os.path.isfile(current_dic+f"\\"+data):
             message = pjf.ready_message(data, "file")
-        if data == "exit":
+        elif data == "exit":
             client_socket.send()
             break
         else:
