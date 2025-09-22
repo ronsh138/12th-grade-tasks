@@ -121,3 +121,4 @@ def ready_message(data, type):
         f_content = ready_file(data)
         message = {'type': type, 'name': data, 'data': f_content}
     return message
+
